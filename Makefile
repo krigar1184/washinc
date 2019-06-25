@@ -11,3 +11,6 @@ bash:
 
 test:
 	docker-compose run app pytest -sx
+
+logs:
+	docker-compose logs -f app

@@ -1,4 +1,4 @@
-from multiprocessing import RLock
+from multiprocessing import Lock
 from flask import current_app
 
 
@@ -6,11 +6,15 @@ RETAIL_PRICE_CACHE_KEY = 'retail_price'
 RESERVATIONS_COUNT_CACHE_KEY = 'reservations_count'
 
 
-LOCK = RLock()
+LOCKS = {
+    RETAIL_PRICE_CACHE_KEY: Lock(),
+    RESERVATIONS_COUNT_CACHE_KEY: Lock(),
+}
 
 
 def get_retail_price():
-    LOCK.acquire()
+    lock = LOCKS[RETAIL_PRICE_CACHE_KEY]
+    lock.acquire()
 
     try:
         cache = current_app.cache
@@ -19,13 +23,14 @@ def get_retail_price():
         if cache.has(RETAIL_PRICE_CACHE_KEY):
             value = cache.get(RETAIL_PRICE_CACHE_KEY)
     finally:
-        LOCK.release()
+        lock.release()
 
     return value
 
 
 def set_retail_price(value):
-    LOCK.acquire()
+    lock = LOCKS[RETAIL_PRICE_CACHE_KEY]
+    lock.acquire()
 
     try:
         if int(value) <= 0:
@@ -33,11 +38,12 @@ def set_retail_price(value):
 
         current_app.cache.set(RETAIL_PRICE_CACHE_KEY, value)
     finally:
-        LOCK.release()
+        lock.release()
 
 
 def create_reservation():
-    LOCK.acquire()
+    lock = LOCKS[RESERVATIONS_COUNT_CACHE_KEY]
+    lock.acquire()
 
     try:
         cache = current_app.cache
@@ -47,11 +53,12 @@ def create_reservation():
         else:
             cache.set(RESERVATIONS_COUNT_CACHE_KEY, 1)
     finally:
-        LOCK.release()
+        lock.release()
 
 
 def cancel_reservation():
-    LOCK.acquire()
+    lock = LOCKS[RESERVATIONS_COUNT_CACHE_KEY]
+    lock.acquire()
 
     try:
         cache = current_app.cache
@@ -62,8 +69,9 @@ def cancel_reservation():
 
         cache.set(RESERVATIONS_COUNT_CACHE_KEY, current_value - 1)
     finally:
-        LOCK.release()
+        lock.release()
 
 
 def get_reservations():
-    return current_app.cache.get(RESERVATIONS_COUNT_CACHE_KEY)
+    with LOCKS[RESERVATIONS_COUNT_CACHE_KEY]:
+        return current_app.cache.get(RESERVATIONS_COUNT_CACHE_KEY)

@@ -7,7 +7,7 @@ api = Blueprint('api', __name__, url_prefix='/')
 
 
 @api.errorhandler(404)
-def not_found(e):
+def not_found(*args, **kwargs):
     return 'Page not found', 404
 
 
