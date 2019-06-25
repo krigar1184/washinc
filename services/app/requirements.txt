@@ -1,0 +1,5 @@
+flask==1.0.2
+redis
+pytest
+pytest-flask
+ipdb

@@ -1,0 +1,10 @@
+version: "3.7"
+services:
+  app:
+    build: ./services/app
+    env_file: ./development.env
+    volumes: 
+      - ./services/app:/usr/src/app
+    ports:
+      - 5000:5000
+      - 5001:5001
