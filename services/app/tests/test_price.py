@@ -51,7 +51,7 @@ def test_update_reservations(client):
 def test_multiple_clients(app, client):
     def proc(idx):
         s = random.randint(1, 5)
-        print(f'Process {idx} sleeps for {s} seconds')
+        print(f'Thread {idx} sleeps for {s} seconds')
         sleep(s)
 
         with app.app_context():

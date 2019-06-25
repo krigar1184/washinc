@@ -43,7 +43,6 @@ def create_reservation():
         cache = current_app.cache
 
         if cache.has(RESERVATIONS_COUNT_CACHE_KEY):
-            
             cache.set(RESERVATIONS_COUNT_CACHE_KEY, int(cache.get(RESERVATIONS_COUNT_CACHE_KEY)) + 1)
         else:
             cache.set(RESERVATIONS_COUNT_CACHE_KEY, 1)
