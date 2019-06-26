@@ -5,6 +5,7 @@ from wash import views
 
 def create_app(config_overrides=None):
     app = Flask(__name__)
+    app.secret_key = 'fq9{_o@P(=0;+g" ('
 
     if config_overrides:
         app.config.from_mapping(config_overrides)
@@ -13,6 +14,11 @@ def create_app(config_overrides=None):
     app.register_error_handler(404, views.not_found)
     app.cache = SimpleCache()
     app.cache.set('products', {})
-    app.locks = {}
+    app.cache.set('customers', {})
+    app.cache.set('reservations', {})
+    app.locks = {
+        'products': {},
+        'reservations': {},
+    }
 
     return app

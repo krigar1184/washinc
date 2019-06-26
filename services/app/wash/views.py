@@ -1,4 +1,5 @@
-from flask import Response, Blueprint, request, current_app, url_for
+import uuid
+from flask import Response, Blueprint, request, current_app, url_for, session, redirect
 from flask.json import jsonify
 from wash import service
 from wash.models import Product
@@ -14,59 +15,63 @@ def not_found(*args, **kwargs):
 
 @api.route("/")
 def index():
-    return 'Nothing of interest here, sorry'
+    return redirect(url_for('create_product_view'))
 
 
-@api.route("/price/retail/<product_id>", methods=["GET", "PUT"])
-def retail_price_view(product_id):
+@api.route("/reservation/<product_id>", methods=["GET", "PUT", "DELETE"])
+def reservation_view(product_id):
+    try:
+        product = Product.get(id=product_id)
+    except Exception:
+        return '', 404
+
+    customer_id = session.get('customer_id', None)
+
+    if customer_id is None:
+        customer_id = str(uuid.uuid4())
+        session['customer_id'] = customer_id
+
     if request.method == 'GET':
-        return jsonify({'retail_price': service.get_retail_price()}), 200
+        try:
+            reservations = service.get_reservations(product_id, customer_id)
+        except Exception:
+            return '', 500
 
-    service.set_retail_price(request.json['retail_price'])
-    return '', 204
-
-
-@api.route("/reservations/<product_id>", methods=["GET", "PUT", "DELETE"])
-def reservations(product_id):
-    product = Product.get(id=product_id)
-
-    if request.method == 'GET':
-        pass
+        return jsonify([r.as_dict() for r in reservations]), 200
 
     if request.method == 'PUT':
-        pass
+        try:
+            service.create_reservation(product_id, customer_id)
+        except Exception:
+            return '', 500
+
+        return '', 201
 
     if request.method == 'DELETE':
-        pass
+        try:
+            service.cancel_reservation(product_id, customer_id)
+        except Exception:
+            return '', 500
+
+        return '', 204
 
 
-@api.route("/reservations/get")
-def get_reservations_view():
-    return jsonify({"reservations_count": str(service.get_reservations())})
+@api.route("/products", methods=["PUT", 'GET'])
+def create_product_view():
+    if request.method == 'PUT':
+        try:
+            product = service.create_product(**request.json)
+        except Exception:
+            return '', 400
 
-
-@api.route("/reservations/create", methods=["PUT"])
-def create_reservation_view():
-    return '', 204
-
-
-@api.route("/reservations/cancel", methods=["DELETE"])
-def cancel_reservation_view():
-    return '', 204
-
-
-@api.route("/product/create", methods=["PUT"])
-def create_product():
-    try:
-        product = service.create_product(**request.json)
-    except Exception:
-        return '', 400
-
-    return jsonify({"product_url": url_for('api.product', product_id=product.id)}), 201
+        return jsonify({"product_url": url_for('api.product_view', product_id=product.id)}), 201
+    
+    if request.method == 'GET':
+        return jsonify([p.as_dict() for _, p in Product.all().items()]), 200
 
 
 @api.route("/product/<product_id>", methods=["GET", "DELETE", "PUT"])
-def product(product_id):
+def product_view(product_id):
     try:
         product = Product.get(id=product_id)
     except Exception:
@@ -81,7 +86,7 @@ def product(product_id):
         except Exception as e:
             return '', 400
 
-        return jsonify({"product_url": url_for('api.product', product_id=product.id)}), 200
+        return jsonify({"product_url": url_for('api.product_view', product_id=product.id)}), 200
 
     if request.method == "DELETE":
         try:

@@ -1,99 +1,51 @@
 from multiprocessing import Lock, RLock
-from flask import current_app, g
-from wash.models import Product
+from flask import current_app
+from wash.models import Product, Reservation
 
 
-RETAIL_PRICE_CACHE_KEY = 'retail_price'
-RESERVATIONS_COUNT_CACHE_KEY = 'reservations_count'
+def create_reservation(product_id, customer_id):
+    if product_id not in current_app.locks:
+        current_app.locks[product_id] = RLock()
 
-
-LOCKS = {
-    RETAIL_PRICE_CACHE_KEY: Lock(),
-    RESERVATIONS_COUNT_CACHE_KEY: Lock(),
-}
-
-
-def get_retail_price():
-    lock = LOCKS[RETAIL_PRICE_CACHE_KEY]
-    lock.acquire()
-
-    try:
+    with current_app.locks[product_id]:
         cache = current_app.cache
-        value = 0
+        reservation = Reservation(product_id=product_id, customer_id=customer_id)
+        reservations = Reservation.all()
+        reservations[reservation.id] = reservation
+        current_app.cache.set('reservations', reservations)
 
-        if cache.has(RETAIL_PRICE_CACHE_KEY):
-            value = cache.get(RETAIL_PRICE_CACHE_KEY)
-    finally:
-        lock.release()
-
-    return value
+    return reservation
 
 
-def set_retail_price(value):
-    lock = LOCKS[RETAIL_PRICE_CACHE_KEY]
-    lock.acquire()
-
-    try:
-        if int(value) <= 0:
-            raise Exception  # TODO raise more specific exception here
-
-        current_app.cache.set(RETAIL_PRICE_CACHE_KEY, value)
-    finally:
-        lock.release()
+def cancel_reservation(product_id, customer_id):
+    reservation = Reservation.get_many(product_id=product_id, customer_id=customer_id)[0]
+    reservations = Reservation.all()
+    del reservations[reservation.id]
+    current_app.cache.set('reservations', reservations)
 
 
-def create_reservation():
-    lock = LOCKS[RESERVATIONS_COUNT_CACHE_KEY]
-    lock.acquire()
+def get_reservations(product_id, customer_id):
+    reservations = Reservation.get_many(customer_id=customer_id)
 
-    try:
-        cache = current_app.cache
-
-        if cache.has(RESERVATIONS_COUNT_CACHE_KEY):
-            cache.set(RESERVATIONS_COUNT_CACHE_KEY, int(cache.get(RESERVATIONS_COUNT_CACHE_KEY)) + 1)
-        else:
-            cache.set(RESERVATIONS_COUNT_CACHE_KEY, 1)
-    finally:
-        lock.release()
-
-
-def cancel_reservation():
-    lock = LOCKS[RESERVATIONS_COUNT_CACHE_KEY]
-    lock.acquire()
-
-    try:
-        cache = current_app.cache
-        current_value = int(cache.get(RESERVATIONS_COUNT_CACHE_KEY))
-
-        if current_value in (0, None):
-            raise Exception("This could never happen")
-
-        cache.set(RESERVATIONS_COUNT_CACHE_KEY, current_value - 1)
-    finally:
-        lock.release()
-
-
-def get_reservations():
-    with LOCKS[RESERVATIONS_COUNT_CACHE_KEY]:
-        return current_app.cache.get(RESERVATIONS_COUNT_CACHE_KEY)
+    return reservations
 
 
 def create_product(**data):
     product = Product(**data)
-    current_app.locks[product.id] = RLock()
+    current_app.locks['products'][product.id] = RLock()
     products = current_app.cache.get('products')
     products[product.id] = product
 
-    with current_app.locks[product.id]:
+    with current_app.locks['products'][product.id]:
         current_app.cache.set('products', products)
     return product
 
 
 def update_product(product_id, **data):
-    if product_id not in current_app.locks:
-        current_app.locks[product_id] = RLock()
+    if product_id not in current_app.locks['products']:
+        current_app.locks['products'][product_id] = RLock()
 
-    with current_app.locks[product_id]:
+    with current_app.locks['products'][product_id]:
         product = Product.get(id=product_id)
 
         for k, v in data.items():
@@ -108,10 +60,10 @@ def update_product(product_id, **data):
 
 
 def delete_product(product_id):
-    if product_id not in current_app.locks:
-        current_app.locks[product_id] = RLock()
+    if product_id not in current_app.locks['products']:
+        current_app.locks['products'][product_id] = RLock()
 
-    with current_app.locks[product_id]:
+    with current_app.locks['products'][product_id]:
         products = Product.all()
         del products[product_id]
         current_app.cache.set('products', products)
