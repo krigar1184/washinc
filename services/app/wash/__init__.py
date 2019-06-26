@@ -1,4 +1,4 @@
-from flask import Flask
+from flask import Flask, g
 from werkzeug.contrib.cache import SimpleCache
 from wash import views
 
@@ -12,5 +12,7 @@ def create_app(config_overrides=None):
     app.register_blueprint(views.api)
     app.register_error_handler(404, views.not_found)
     app.cache = SimpleCache()
+    app.cache.set('products', {})
+    app.locks = {}
 
     return app

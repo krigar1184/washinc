@@ -1,3 +1,5 @@
+.PHONY: *
+
 up:
 	docker-compose up --build -d
 
@@ -8,6 +10,9 @@ restart: down up
 
 bash:
 	docker-compose exec app bash
+
+pyshell:
+	docker-compose exec app python
 
 test:
 	docker-compose run app pytest -sx

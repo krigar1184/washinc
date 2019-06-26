@@ -1,5 +1,6 @@
-from multiprocessing import Lock
-from flask import current_app
+from multiprocessing import Lock, RLock
+from flask import current_app, g
+from wash.models import Product
 
 
 RETAIL_PRICE_CACHE_KEY = 'retail_price'
@@ -75,3 +76,42 @@ def cancel_reservation():
 def get_reservations():
     with LOCKS[RESERVATIONS_COUNT_CACHE_KEY]:
         return current_app.cache.get(RESERVATIONS_COUNT_CACHE_KEY)
+
+
+def create_product(**data):
+    product = Product(**data)
+    current_app.locks[product.id] = RLock()
+    products = current_app.cache.get('products')
+    products[product.id] = product
+
+    with current_app.locks[product.id]:
+        current_app.cache.set('products', products)
+    return product
+
+
+def update_product(product_id, **data):
+    if product_id not in current_app.locks:
+        current_app.locks[product_id] = RLock()
+
+    with current_app.locks[product_id]:
+        product = Product.get(id=product_id)
+
+        for k, v in data.items():
+            if k in product.as_dict():
+                product.__dict__[k] = v
+
+        products = current_app.cache.get('products')
+        products[product_id] = product
+        current_app.cache.set('products', products)
+
+    return product
+
+
+def delete_product(product_id):
+    if product_id not in current_app.locks:
+        current_app.locks[product_id] = RLock()
+
+    with current_app.locks[product_id]:
+        products = Product.all()
+        del products[product_id]
+        current_app.cache.set('products', products)

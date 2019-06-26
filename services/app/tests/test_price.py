@@ -6,13 +6,11 @@ import pytest
 from flask import url_for, current_app
 
 
-@pytest.mark.parametrize('price', [
-    random.randint(100, 999),
-])
-def test_retail_price(client, price):
+@pytest.mark.parametrize('price', [random.randint(100, 999)])
+def test_retail_price_success(client, product, price):
     price = str(price)
 
-    response = client.get(url_for('api.retail_price_view'))
+    response = client.get(url_for('api.retail_price_view', product_id=product.id))
     assert response.status_code == 200
     assert response.json['retail_price'] == 0
 
