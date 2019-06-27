@@ -1,13 +1,16 @@
+import os
 from multiprocessing import Lock, RLock
 from flask import current_app
 from wash.models import Product, Reservation
 
 
 def create_reservation(product_id, customer_id):
-    if product_id not in current_app.locks:
-        current_app.locks[product_id] = RLock()
+    locks = current_app.locks['products']
 
-    with current_app.locks[product_id]:
+    if product_id not in locks:
+        locks[product_id] = RLock()
+
+    with locks[product_id]:
         cache = current_app.cache
         reservation = Reservation(product_id=product_id, customer_id=customer_id)
         reservations = Reservation.all()
@@ -25,9 +28,7 @@ def cancel_reservation(product_id, customer_id):
 
 
 def get_reservations(product_id, customer_id):
-    reservations = Reservation.get_many(customer_id=customer_id)
-
-    return reservations
+    return Reservation.get_many(customer_id=customer_id)
 
 
 def create_product(**data):

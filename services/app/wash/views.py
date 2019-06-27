@@ -21,7 +21,7 @@ def index():
 @api.route("/reservation/<product_id>", methods=["GET", "PUT", "DELETE"])
 def reservation_view(product_id):
     try:
-        product = Product.get(id=product_id)
+        Product.get(id=product_id)  # crutch: making sure the product exists
     except Exception:
         return '', 404
 
