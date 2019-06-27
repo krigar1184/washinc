@@ -1,5 +1,7 @@
 # washinc
 
+[![Build Status](https://travis-ci.org/krigar1184/washinc.svg?branch=master)](https://travis-ci.org/krigar1184/washinc)
+
 `make test` to run the test suite.
 
 `make up` to have the app up and running on port 5000.
