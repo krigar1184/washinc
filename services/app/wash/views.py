@@ -28,6 +28,7 @@ def reservation_view(product_id):
     customer_id = session.get('customer_id', None)
 
     if customer_id is None:
+        session.permanent = True
         customer_id = str(uuid.uuid4())
         session['customer_id'] = customer_id
 

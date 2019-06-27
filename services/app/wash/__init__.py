@@ -1,4 +1,4 @@
-from flask import Flask, g
+from flask import Flask
 from werkzeug.contrib.cache import SimpleCache
 from wash import views
 
