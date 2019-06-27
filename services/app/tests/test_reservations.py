@@ -6,6 +6,11 @@ from flask import url_for
 from wash.models import Reservation
 
 
+def test_reserve_nonexisting_product(client):
+    response = client.put(url_for('api.reservation_view', product_id='nonexisting_product_id'))
+    assert response.status_code == 404
+
+
 def test_update_reservations(app, client, product):
     response = client.put(url_for('api.reservation_view', product_id=product.id))
     assert response.status_code == 201
