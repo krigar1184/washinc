@@ -38,7 +38,26 @@ def get_reservations(customer_id, product_id=None):
     return Reservation.get_many(**search_params)
 
 
+def _get_validated_product_data(**data):
+    name = data.get('name')
+    assert name is not None
+
+    retail_price = data.get('retail_price')
+    assert retail_price is not None
+    assert retail_price >= 0
+
+    description = data.get('description')
+
+    return {
+        'name': name,
+        'description': description,
+        'retail_price': retail_price,
+    }
+
+
 def create_product(**data):
+    data = _get_validated_product_data(**data)
+
     product = Product(**data)
     current_app.locks['products'][product.id] = RLock()
     products = current_app.cache.get('products')
@@ -46,6 +65,7 @@ def create_product(**data):
 
     with current_app.locks['products'][product.id]:
         current_app.cache.set('products', products)
+
     return product
 
 
@@ -55,6 +75,7 @@ def update_product(product_id, **data):
 
     with current_app.locks['products'][product_id]:
         product = Product.get(id=product_id)
+        data = _get_validated_product_data(**data)
 
         for k, v in data.items():
             if k in product.as_dict():

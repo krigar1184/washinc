@@ -11,4 +11,4 @@ def app():
 
 @pytest.fixture
 def product():
-    return create_product(name='name', description='description')
+    return create_product(name='name', description='description', retail_price=100)

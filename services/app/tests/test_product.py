@@ -31,6 +31,7 @@ def test_update_product(client, product, data):
     assert response.status_code == 200
 
     product_url = response.json['product_url']
+
     response = client.get(product_url)
     assert response.status_code == 200
     product_data = response.json
@@ -46,3 +47,18 @@ def test_delete_product(client, product):
     assert response.status_code == 204
 
     assert product.id not in Product.all()
+
+
+@pytest.mark.parametrize('data', [
+    {
+        'name': 'another name',
+        'description': 'another description',
+    },
+    {
+        'description': 'another description',
+        'retail_price': 123,
+    }
+])
+def test_update_product_with_invalid_data(client, product, data):
+    response = client.put(url_for('api.product_view', product_id=product.id), json=data)
+    assert response.status_code == 400
