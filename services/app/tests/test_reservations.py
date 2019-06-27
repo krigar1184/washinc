@@ -15,26 +15,26 @@ def test_update_reservations(app, client, product):
     response = client.put(url_for('api.reservation_view', product_id=product.id))
     assert response.status_code == 201
 
-    response = client.get(url_for('api.reservation_view', product_id=product.id))
+    response = client.get(url_for('api.reservations_list_view', product_id=product.id))
     assert len(response.json) == 1
 
     response = client.put(url_for('api.reservation_view', product_id=product.id))
     assert response.status_code == 201
 
-    response = client.get(url_for('api.reservation_view', product_id=product.id))
+    response = client.get(url_for('api.reservations_list_view', product_id=product.id))
     assert len(response.json) == 2
 
     response = client.delete(url_for('api.reservation_view', product_id=product.id))
     assert response.status_code == 204
 
-    response = client.get(url_for('api.reservation_view', product_id=product.id))
+    response = client.get(url_for('api.reservations_list_view', product_id=product.id))
     assert len(response.json) == 1
 
     with app.test_client() as c:  # using different client to simulate different user sessions
         response = c.put(url_for('api.reservation_view', product_id=product.id))
         assert response.status_code == 201
 
-        response = c.get(url_for('api.reservation_view', product_id=product.id))
+        response = c.get(url_for('api.reservations_list_view', product_id=product.id))
         assert len(response.json) == 1
 
 

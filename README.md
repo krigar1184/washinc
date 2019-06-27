@@ -7,8 +7,11 @@
 `make up` to have the app up and running on port 5000.
 
 The following entrypoints are available:
-- [GET] /price/retail - get the current retail price
-- [PUT] /price/retail - update the current retail price
-- [GET] /reservations/get - get current reservations number
-- [PUT] /reservation/create - make a reservation (increment the counter by 1)
-- [DELETE] /reservations/cancel - cancel a reservation (decrement the counter by 1)
+- [GET] /products -- get list of products
+- [PUT] /products -- add new product
+- [GET] /product/<id> -- see information on a product with specified id
+- [PUT] /product/<id> -- update a product
+- [DELETE] /product/<id> -- delete a product
+- [PUT] /reservation/<product_id> -- reserve a product for a current user
+- [DELETE] /reservation/<product_id> -- cancel a reservation
+- [GET] /reservations/ -- get list of current user's reserved products

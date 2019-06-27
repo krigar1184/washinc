@@ -18,7 +18,23 @@ def index():
     return redirect(url_for('create_product_view'))
 
 
-@api.route("/reservation/<product_id>", methods=["GET", "PUT", "DELETE"])
+@api.route("/reservations")
+def reservations_list_view():
+    customer_id = session.get('customer_id', None)
+
+    if customer_id is None:
+        session.permanent = True
+        customer_id = str(uuid.uuid4())
+        session['customer_id'] = customer_id
+
+    try:
+        reservations = service.get_reservations(customer_id)
+    except Exception:
+        return '', 500
+
+    return jsonify([r.as_dict() for r in reservations]), 200
+
+@api.route("/reservation/<product_id>", methods=["PUT", "DELETE"])
 def reservation_view(product_id):
     try:
         Product.get(id=product_id)  # crutch: making sure the product exists
@@ -31,14 +47,6 @@ def reservation_view(product_id):
         session.permanent = True
         customer_id = str(uuid.uuid4())
         session['customer_id'] = customer_id
-
-    if request.method == 'GET':
-        try:
-            reservations = service.get_reservations(product_id, customer_id)
-        except Exception:
-            return '', 500
-
-        return jsonify([r.as_dict() for r in reservations]), 200
 
     if request.method == 'PUT':
         try:

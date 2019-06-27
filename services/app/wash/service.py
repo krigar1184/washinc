@@ -27,8 +27,15 @@ def cancel_reservation(product_id, customer_id):
     current_app.cache.set('reservations', reservations)
 
 
-def get_reservations(product_id, customer_id):
-    return Reservation.get_many(customer_id=customer_id)
+def get_reservations(customer_id, product_id=None):
+    search_params = {
+        'customer_id': customer_id,
+    }
+
+    if product_id is not None:
+        search_params['product_id'] = product_id
+
+    return Reservation.get_many(**search_params)
 
 
 def create_product(**data):
